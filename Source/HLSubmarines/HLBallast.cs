@@ -407,7 +407,7 @@ namespace HLBallastSpace
         {
             // Debug.Log(this.part.partName + " " + this.gameObject.GetInstanceID() + " is removing stock partBuoyancy.");
             // If this part has physics and stock buoyancy, remove it
-            if (clearStockBuoyancy == 1 && stocky.rigidbody != null && stocky.partBuoyancy != null && !toBeDestroyed.Contains(stocky.partBuoyancy))
+            if (clearStockBuoyancy == 1 && stocky.Rigidbody != null && stocky.partBuoyancy != null && !toBeDestroyed.Contains(stocky.partBuoyancy))
             {
                 toBeDestroyed.Add(stocky.partBuoyancy);
                 // Debug.Log(this.part.partName + " " + this.gameObject.GetInstanceID() + " is removing stock partBuoyancy from " + stocky.name + " " + stocky.gameObject.GetInstanceID());
@@ -416,7 +416,7 @@ namespace HLBallastSpace
             }
 
             // If the part contains crew we add a basic ballast to it.
-            if (stocky.rigidbody != null && stocky.Modules.OfType<HLBallastPartModule>().FirstOrDefault() == null && stocky.GetComponentInChildren<WheelCollider>() == null)
+            if (stocky.Rigidbody != null && stocky.Modules.OfType<HLBallastPartModule>().FirstOrDefault() == null && stocky.GetComponentInChildren<WheelCollider>() == null)
             {
                 // Debug.Log("Creating new HLBallastPartModule for " + stocky.gameObject.GetInstanceID());
                 Debug.Log(this.part.name + " " + this.gameObject.GetInstanceID() + " is adding HLBuoyancyPartModule to " + stocky.name + " " + stocky.gameObject.GetInstanceID());
@@ -516,7 +516,7 @@ namespace HLBallastSpace
 
         private void findPartAltitude(Part floatyPart, float vertical)
         {
-            partAltitude = Vector3.Distance(floatyPart.rigidbody.worldCenterOfMass, vessel.mainBody.position) - (float)(vessel.mainBody.Radius - vertical);
+            partAltitude = Vector3.Distance(floatyPart.WCoM, vessel.mainBody.position) - (float)(vessel.mainBody.Radius - vertical);
 
             if (partAltitude < -buoyancyBottom)
             {
@@ -546,9 +546,9 @@ namespace HLBallastSpace
         {
             // Apply extra drag if underwater
             // Based on Snjo's FSbuoyancy
-            if (this.part.rigidbody != null)
-                if (partAltitude - buoyancyBottom < 0) this.part.rigidbody.drag = part.maximum_drag * waterDragMultiplier;
-                else this.part.rigidbody.drag = 0;
+            if (this.part.Rigidbody != null)
+                if (partAltitude - buoyancyBottom < 0) this.part.Rigidbody.drag = part.maximum_drag * waterDragMultiplier;
+                else this.part.Rigidbody.drag = 0;
         }
 
         private void findLiquidDensity()
@@ -629,7 +629,7 @@ namespace HLBallastSpace
 
         private void crashInWater()
         {
-            if (this.part.rigidbody.velocity.magnitude > this.part.crashTolerance * waterImpactMultiplier) // && partAltitude < -buoyancyBottom)
+            if (this.part.Rigidbody.velocity.magnitude > this.part.crashTolerance * waterImpactMultiplier) // && partAltitude < -buoyancyBottom)
             {
                 GameEvents.onCrashSplashdown.Fire(new EventReport(FlightEvents.SPLASHDOWN_CRASH, this.part, this.part.partInfo.title, "ocean", 0, "HLBallastPartModule: Hit the water too fast"));
                 this.part.explode();
@@ -642,11 +642,11 @@ namespace HLBallastSpace
             if (splashTimer > 0f) splashTimer -= Time.deltaTime;
             else
             {
-                if (base.rigidbody.velocity.magnitude > 6f && partAltitude < 0 && partAltitude < previousPartAltitude && previousPartAltitude > 0) // don't splash if you are deep in the water or going slow
+                if (part.Rigidbody.velocity.magnitude > 6f && partAltitude < 0 && partAltitude < previousPartAltitude && previousPartAltitude > 0) // don't splash if you are deep in the water or going slow
                 {
-                    if (Vector3.Distance(base.rigidbody.worldCenterOfMass, FlightGlobals.camera_position) < 500f)
+                    if (Vector3.Distance(part.WCoM, FlightGlobals.camera_position) < 500f)
                     {
-                        FXMonger.Splash(base.rigidbody.worldCenterOfMass, base.rigidbody.velocity.magnitude / 50f);
+                        FXMonger.Splash(part.WCoM, part.Rigidbody.velocity.magnitude / 50f);
                     }
                     splashTimer = splashCooldown;
 
@@ -995,19 +995,19 @@ namespace HLBallastSpace
             // Note that the "GeeForce" is gravity, which points downward.  A large buoyant area will cause lift
 
             // For depth control, maximum possible lift
-            netForceMagnitudeMax = (BallastVolume * liquidDensity * (float)FlightGlobals.getGeeForceAtPosition(part.rigidbody.worldCenterOfMass).magnitude);
+            netForceMagnitudeMax = (BallastVolume * liquidDensity * (float)FlightGlobals.getGeeForceAtPosition(part.WCoM).magnitude);
 
-            Vector3 netForce = (specificVolumeFractionBallast - specificVolumeFractionBuoyant) * BallastVolume * liquidDensity * FlightGlobals.getGeeForceAtPosition(part.rigidbody.worldCenterOfMass);
+            Vector3 netForce = (specificVolumeFractionBallast - specificVolumeFractionBuoyant) * BallastVolume * liquidDensity * FlightGlobals.getGeeForceAtPosition(part.WCoM);
 
             // Scale the amount of force based on how submerged
             if (partAltitude > buoyancyVerticalOffset && partAltitude < buoyancyTop)
                 netForce = netForce * 0.5f * ((buoyancyTop + buoyancyVerticalOffset - partAltitude) / (buoyancyTop - buoyancyVerticalOffset));
             if (partAltitude > buoyancyBottom && partAltitude < buoyancyVerticalOffset)
                 netForce = netForce * 0.5f * (1 + ((partAltitude) / (buoyancyBottom - buoyancyVerticalOffset)));
-            part.rigidbody.AddForceAtPosition(netForce, part.rigidbody.worldCenterOfMass);
+            part.Rigidbody.AddForceAtPosition(netForce, part.WCoM);
 
             // How much force, and in what direction? Say positive up
-            netForceMagnitude = Vector3.Dot(netForce, -1 * FlightGlobals.getGeeForceAtPosition(part.rigidbody.worldCenterOfMass).normalized);
+            netForceMagnitude = Vector3.Dot(netForce, -1 * FlightGlobals.getGeeForceAtPosition(part.WCoM).normalized);
 
         }
 
@@ -1018,7 +1018,7 @@ namespace HLBallastSpace
                 return;
 
             GUI.skin = HighLogic.Skin;
-            SubmarineWindowID = (int)part.uid;
+            SubmarineWindowID = (int)part.GetInstanceID();
             windowPos = GUILayout.Window(SubmarineWindowID, windowPos, WindowGUI, "Ballast Control", GUILayout.MinWidth(200));
         }
 

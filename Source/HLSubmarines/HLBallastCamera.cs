@@ -127,8 +127,11 @@ namespace HLBallastSpace
             // Create the sphere which will go under the world's ocean
             deepOcean = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 
-            // No collider
-            if (deepOcean.collider != null) Destroy(deepOcean.collider);
+			// No collider
+			if (deepOcean.GetComponent<Collider>() != null)
+			{
+				GameObject.Destroy(deepOcean.GetComponent<Collider>());
+			}
 
             // Place the sphere under the ocean
             deepOcean.transform.position = FlightGlobals.ActiveVessel.mainBody.position;
@@ -137,9 +140,13 @@ namespace HLBallastSpace
 
             // Deep water is blue and not transparent at all, and does not receive or cast shadows
             Color deepWater = Color.blue;
-            deepOcean.renderer.material.color = deepWater;
-            deepOcean.renderer.castShadows = false;
-            deepOcean.renderer.receiveShadows = false;
+			var renderObject = deepOcean.GetComponent<MeshRenderer>();
+			if (renderObject != null)
+			{
+				renderObject.material.color = deepWater;
+				renderObject.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				renderObject.receiveShadows = false;
+			}
         }
 
         private void createDeepOceanPlane()
@@ -154,22 +161,29 @@ namespace HLBallastSpace
             deepOcean = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             deepOceanPivot = new GameObject();
 
-            // No collider
-            if (deepOcean.collider != null) Destroy(deepOcean.collider);
+			// No collider
+			if (deepOcean.GetComponent<Collider>() != null)
+			{
+				GameObject.Destroy(deepOcean.GetComponent<Collider>());
+			}
 
-            // Place the plane under the ocean
-            deepOcean.transform.rotation.SetLookRotation(-1 * FlightGlobals.getGeeForceAtPosition(FlightGlobals.ActiveVessel.transform.position));
+			// Place the plane under the ocean
+			deepOcean.transform.rotation.SetLookRotation(-1 * FlightGlobals.getGeeForceAtPosition(FlightGlobals.ActiveVessel.transform.position));
             deepOcean.transform.Rotate(Vector3.right, 90);
             deepOcean.transform.localScale = new Vector3(10000, 0, 10000);
 
             // Deep water is blue and not transparent at all, and does not receive or cast shadows
             Color deepWater = Color.blue;
-            deepOcean.renderer.material.color = deepWater;
-            deepOcean.renderer.castShadows = false;
-            deepOcean.renderer.receiveShadows = false;
-        }
+			var renderObject = deepOcean.GetComponent<MeshRenderer>();
+			if (renderObject != null)
+			{
+				renderObject.material.color = deepWater;
+				renderObject.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				renderObject.receiveShadows = false;
+			}
+		}
 
-        private static double findAltitude(Transform aLocation)
+		private static double findAltitude(Transform aLocation)
         {
             if (FlightGlobals.ActiveVessel == null) return 0;
             return Vector3.Distance(aLocation.position, FlightGlobals.ActiveVessel.mainBody.position) - (FlightGlobals.ActiveVessel.mainBody.Radius);
@@ -191,7 +205,7 @@ namespace HLBallastSpace
 
                 deepOcean.transform.position = FlightGlobals.ActiveVessel.transform.position - FlightGlobals.getGeeForceAtPosition(FlightGlobals.ActiveVessel.transform.position).normalized * ((float)FlightGlobals.ActiveVessel.altitude + oceanDarkDepth);
                 deepOcean.transform.LookAt(FlightGlobals.ActiveVessel.mainBody.position);
-                deepOcean.transform.RotateAround(deepOcean.transform.right,90);
+                deepOcean.transform.Rotate(deepOcean.transform.right,90);
             }
         }
 
